@@ -1,22 +1,20 @@
-import { WebSocketProvider } from "@ethersproject/providers";
 import { UniswapV2EventListener } from "../UniswapV2/uniswapV2Listener";
 import { UniswapV2Constants } from "./uniswapV2Constants";
 import { TokenDatabase } from "../tokenDatabase";
 import { DystopiaEventListener } from "./Dystopia/dystopiaListener";
-import { DystopiaConstants } from "./Dystopia/dystopiaConstants";
 import { FirebirdEventListener } from "./Firebird/firebirdListener";
+import { Provider } from "../provider";
 
 export class UniswapV2Initializer {
-    public static async initialize(
-        provider: WebSocketProvider,
-        db: TokenDatabase
-    ) {
-        const chainId = (await provider.getNetwork()).chainId;
+    public static async initialize(provider: Provider, db: TokenDatabase) {
+        const chainId = provider.chainId();
         let lastCreatedBlock = await db.getLastCreatedPoolBlock(chainId);
+        let initial = false;
 
         // Database not yet initialized
         if (lastCreatedBlock == 0) {
-            const endBlock = await provider.getBlockNumber();
+            initial = true;
+            const endBlock = provider.block();
             const startBlock =
                 UniswapV2Constants.getFirstCreatedFactoryBlock(chainId);
 
@@ -75,7 +73,7 @@ export class UniswapV2Initializer {
             provider,
             db,
             lastCreatedBlock + 1,
-            await provider.getBlockNumber(),
+            provider.block(),
             UniswapV2Constants.createPairEventArchiveBlocksPerCall(chainId)
         );
 
@@ -90,7 +88,7 @@ export class UniswapV2Initializer {
             provider,
             db,
             lastCreatedBlock + 1,
-            await provider.getBlockNumber(),
+            provider.block(),
             UniswapV2Constants.createPairEventArchiveBlocksPerCall(chainId)
         );
 
@@ -99,7 +97,7 @@ export class UniswapV2Initializer {
             provider,
             db,
             lastCreatedBlock + 1,
-            await provider.getBlockNumber(),
+            provider.block(),
             UniswapV2Constants.createPairEventArchiveBlocksPerCall(chainId)
         );
 
@@ -118,8 +116,8 @@ export class UniswapV2Initializer {
         await UniswapV2EventListener.syncArchiveAndStore(
             provider,
             db,
-            lastUpdatedBlock,
-            await provider.getBlockNumber(),
+            initial ? lastCreatedBlock : lastUpdatedBlock,
+            provider.block(),
             UniswapV2Constants.SYNC_EVENT_ARCHIVE_BLOCKS_PER_CALL
         );
 

@@ -60,7 +60,8 @@ export class TokenDatabase {
     private _connected: boolean = false;
     public readonly databaseUrl: string;
 
-    constructor(_databaseUrl: string) {
+    constructor(_databaseUrl: string | undefined) {
+        invariant(_databaseUrl, "Database URL is undefined");
         this.databaseUrl = _databaseUrl;
     }
 

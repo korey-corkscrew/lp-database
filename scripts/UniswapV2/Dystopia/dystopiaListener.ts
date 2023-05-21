@@ -1,16 +1,16 @@
-import { WebSocketProvider } from "@ethersproject/providers";
 import { ethers } from "hardhat";
 import chalk from "chalk";
 import { TokenDatabase } from "../../tokenDatabase";
 import { DystopiaConstants } from "./dystopiaConstants";
 import { ProtocolIndexConstants } from "../../protocolIndexConstants";
+import { Provider } from "../../provider";
 
 export class DystopiaEventListener {
     public static async createPairAndStore(
-        provider: WebSocketProvider,
+        provider: Provider,
         db: TokenDatabase
     ) {
-        const chainId = (await provider.getNetwork()).chainId;
+        const chainId = provider.chainId();
 
         console.log(
             `Chain ID: ${chalk.cyan(
@@ -29,7 +29,7 @@ export class DystopiaEventListener {
         }
         if (address == "") return;
 
-        provider.on(
+        provider.provider().on(
             {
                 address: address,
                 topics: [
@@ -70,13 +70,13 @@ export class DystopiaEventListener {
     }
 
     public static async createPairArchiveAndStore(
-        provider: WebSocketProvider,
+        provider: Provider,
         db: TokenDatabase,
         startBlock: number,
         endBlock: number,
         step: number
     ) {
-        const chainId = (await provider.getNetwork()).chainId;
+        const chainId = provider.chainId();
         for (let i = startBlock; i <= endBlock; i += step) {
             let logs = await this._createPairArchive(
                 provider,
@@ -117,7 +117,7 @@ export class DystopiaEventListener {
     }
 
     private static async _createPairArchive(
-        provider: WebSocketProvider,
+        provider: Provider,
         chainId: number,
         startBlock: number,
         endBlock?: number
@@ -132,7 +132,7 @@ export class DystopiaEventListener {
 
         if (address == "") return [];
 
-        const logs = await provider.getLogs({
+        const logs = await provider.provider().getLogs({
             fromBlock: startBlock,
             toBlock: endBlock,
             address: address,
