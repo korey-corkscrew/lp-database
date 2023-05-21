@@ -1,4 +1,5 @@
 import { WebSocketProvider } from "@ethersproject/providers";
+import chalk from "chalk";
 import invariant from "tiny-invariant";
 
 export class Provider {
@@ -8,10 +9,15 @@ export class Provider {
     private _initalized: boolean = false;
 
     constructor(_rpcWebSocket: string | undefined) {
-        invariant(_rpcWebSocket, "RPC web socket environment variable missing");
+        invariant(_rpcWebSocket, "RPC web socket is undefined");
         this._provider = new WebSocketProvider(_rpcWebSocket);
         this._provider.on("block", async (block) => {
             this._block = block;
+            // console.log(
+            //     `Chain ID ${chalk.cyan(
+            //         `[ ${this._chainId} ]`
+            //     )} | Block ${chalk.yellow(`[ ${this._block} ]`)}`
+            // );
         });
     }
 

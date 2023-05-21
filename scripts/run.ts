@@ -1,39 +1,26 @@
-import { WebSocketProvider } from "@ethersproject/providers";
 import { env } from "process";
 import { TokenDatabase } from "./tokenDatabase";
-import invariant from "tiny-invariant";
 import { UniswapV2Initializer } from "./UniswapV2/uniswapV2Initializer";
+import { Provider } from "./provider";
 
 async function main() {
     const dotenv = require("dotenv");
     dotenv.config();
 
     /* ----------- Create database instance ----------- */
-    invariant(env.MONGODB_URL, "Environment variable missing: MONGODB_URL");
     const db = new TokenDatabase(env.MONGODB_URL);
     await db.connect();
 
     /* ----------- Create websocket providers ----------- */
-    // Polygon
-    invariant(
-        env.POLYGON_RPC_WS,
-        "Environment variable missing: POLYGON_RPC_WS"
-    );
-    const polygon = new WebSocketProvider(env.POLYGON_RPC_WS);
 
-    // Arbitrum
-    invariant(
-        env.ARBITRUM_RPC_WS,
-        "Environment variable missing: ARBITRUM_RPC_WS"
-    );
-    const arbitrum = new WebSocketProvider(env.ARBITRUM_RPC_WS);
+    const polygon = new Provider(env.POLYGON_RPC_WS);
+    await polygon.initialize();
 
-    // Ethereum
-    invariant(
-        env.ETHEREUM_RPC_WS,
-        "Environment variable missing: ETHEREUM_RPC_WS"
-    );
-    const ethereum = new WebSocketProvider(env.ETHEREUM_RPC_WS);
+    const arbitrum = new Provider(env.ARBITRUM_RPC_WS);
+    await arbitrum.initialize();
+
+    const ethereum = new Provider(env.ETHEREUM_RPC_WS);
+    await ethereum.initialize();
 
     /* ----------- Initialize databases ----------- */
     await UniswapV2Initializer.initialize(polygon, db);

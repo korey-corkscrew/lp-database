@@ -1,4 +1,4 @@
-import { BigNumber, BigNumberish } from "ethers";
+import { BigNumberish } from "ethers";
 import { ethers } from "hardhat";
 
 export interface UniswapV2Factory {

@@ -1,11 +1,11 @@
-import { WebSocketProvider } from "@ethersproject/providers";
 import { ethers } from "hardhat";
 import chalk from "chalk";
 import { BigNumber } from "ethers";
 import { TokenDatabase } from "../tokenDatabase";
 import { UniswapV2Constants } from "./uniswapV2Constants";
-import { Contract, Provider } from "ethers-multicall";
+import { Contract, Provider as MulicallProvider } from "ethers-multicall";
 import { ProtocolIndexConstants } from "../protocolIndexConstants";
+import { Provider } from "../provider";
 
 interface Reserves {
     pool: string;
@@ -15,14 +15,14 @@ interface Reserves {
 
 export class UniswapV2EventListener {
     public static async getReservesAndStore(
-        provider: WebSocketProvider,
+        provider: Provider,
         db: TokenDatabase,
         pools: string[],
         poolsPerCall: number
     ) {
-        const chainId = (await provider.getNetwork()).chainId;
+        const chainId = provider.chainId();
         for (let i = 0; i < pools.length; i += poolsPerCall) {
-            let block = await provider.getBlockNumber();
+            let block = provider.block();
             let end = i + poolsPerCall;
             if (end >= pools.length) end = pools.length;
             let reserves = await this._getReserves(
@@ -50,10 +50,10 @@ export class UniswapV2EventListener {
     }
 
     private static async _getReserves(
-        provider: WebSocketProvider,
+        provider: Provider,
         pools: string[]
     ): Promise<Reserves[]> {
-        const multicallProvider = new Provider(provider);
+        const multicallProvider = new MulicallProvider(provider.provider());
         await multicallProvider.init();
         const calls = pools.map((pool) => {
             const contract = new Contract(
@@ -62,21 +62,39 @@ export class UniswapV2EventListener {
             );
             return contract.getReserves();
         });
-        const reserves = await multicallProvider.all(calls);
-        return reserves.map((reserve, i) => {
-            return {
-                pool: pools[i],
-                reserve0: reserve.reserve0,
-                reserve1: reserve.reserve1,
-            };
-        });
+
+        let success = false;
+        let reserves: Reserves[] = [];
+
+        do {
+            try {
+                const _reserves = await multicallProvider.all(calls);
+                reserves = _reserves.map((reserve, i) => {
+                    return {
+                        pool: pools[i],
+                        reserve0: reserve.reserve0,
+                        reserve1: reserve.reserve1,
+                    };
+                });
+                success = true;
+            } catch {
+                setTimeout(() => {
+                    console.log(
+                        `getReserves() call ${chalk.red(
+                            "failed"
+                        )}. Retrying in 1s.`
+                    );
+                }, 1000);
+            }
+        } while (!success);
+        return reserves;
     }
 
     public static async createPairAndStore(
-        provider: WebSocketProvider,
+        provider: Provider,
         db: TokenDatabase
     ) {
-        const chainId = (await provider.getNetwork()).chainId;
+        const chainId = provider.chainId();
 
         console.log(
             `Chain ID: ${chalk.cyan(
@@ -84,7 +102,7 @@ export class UniswapV2EventListener {
             )} | Listening for ${chalk.yellow("[ UniswapV2.CreatePair ]")} logs`
         );
 
-        provider.on(
+        provider.provider().on(
             {
                 topics: [
                     ethers.utils.id(
@@ -121,13 +139,13 @@ export class UniswapV2EventListener {
     }
 
     public static async createPairArchiveAndStore(
-        provider: WebSocketProvider,
+        provider: Provider,
         db: TokenDatabase,
         startBlock: number,
         endBlock: number,
         step: number
     ) {
-        const chainId = (await provider.getNetwork()).chainId;
+        const chainId = provider.chainId();
         for (let i = startBlock; i <= endBlock; i += step) {
             const logs = await this._createPairArchive(
                 provider,
@@ -163,11 +181,8 @@ export class UniswapV2EventListener {
         }
     }
 
-    public static async syncAndStore(
-        provider: WebSocketProvider,
-        db: TokenDatabase
-    ) {
-        const chainId = (await provider.getNetwork()).chainId;
+    public static async syncAndStore(provider: Provider, db: TokenDatabase) {
+        const chainId = provider.chainId();
 
         console.log(
             `Chain ID: ${chalk.cyan(
@@ -175,7 +190,7 @@ export class UniswapV2EventListener {
             )} | Listening for ${chalk.yellow("[ Sync ]")} logs`
         );
 
-        provider.on(
+        provider.provider().on(
             {
                 topics: [
                     ethers.utils.id(
@@ -207,13 +222,13 @@ export class UniswapV2EventListener {
     }
 
     public static async syncArchiveAndStore(
-        provider: WebSocketProvider,
+        provider: Provider,
         db: TokenDatabase,
         startBlock: number,
         endBlock: number,
         step: number
     ) {
-        const chainId = (await provider.getNetwork()).chainId;
+        const chainId = provider.chainId();
         for (let i = startBlock; i <= endBlock; i += step) {
             const logs = await this._syncArchive(
                 provider,
@@ -245,12 +260,12 @@ export class UniswapV2EventListener {
     }
 
     private static async _createPairArchive(
-        provider: WebSocketProvider,
+        provider: Provider,
         chainId: number,
         startBlock: number,
         endBlock?: number
     ) {
-        const logs = await provider.getLogs({
+        const logs = await provider.provider().getLogs({
             fromBlock: startBlock,
             toBlock: endBlock,
             topics: [
@@ -282,12 +297,12 @@ export class UniswapV2EventListener {
     }
 
     private static async _syncArchive(
-        provider: WebSocketProvider,
+        provider: Provider,
         chainId: number,
         startBlock: number,
         endBlock?: number
     ) {
-        const logs = await provider.getLogs({
+        const logs = await provider.provider().getLogs({
             fromBlock: startBlock,
             toBlock: endBlock,
             topics: [
