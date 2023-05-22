@@ -28,7 +28,7 @@ export interface IERC20 {
     address: string;
     name: string;
     symbol: string;
-    decimals: string;
+    decimals: number;
     chainId: number;
 }
 
@@ -52,11 +52,19 @@ export class TokenDatabase {
         chainId: { type: Number, required: true },
         poolIds: { type: [String], required: true },
     });
+    private readonly _erc20Schema = new Schema<IERC20>({
+        address: { type: String, required: true },
+        name: { type: String, required: true },
+        symbol: { type: String, required: true },
+        decimals: { type: Number, required: true },
+        chainId: { type: Number, required: true },
+    });
     private readonly _poolData = model<IPoolData>("PoolData", this._poolSchema);
     private readonly _poolLookup = model<IPoolLookup>(
         "PoolLookup",
         this._poolLookupSchema
     );
+    private readonly _erc20 = model<IERC20>("ERC20", this._erc20Schema);
     private _connected: boolean = false;
     public readonly databaseUrl: string;
 
@@ -294,6 +302,9 @@ export class TokenDatabase {
         await pool.save();
 
         await this._setPoolLookup(_token0, _token1, _pool, _chainId);
+
+        // await this._setErc20(_token0, "", "", 0, _chainId);
+        // await this._setErc20(_token1, "", "", 0, _chainId);
     }
 
     private async _getPoolById(_id: string): Promise<IPoolData> {
@@ -312,5 +323,28 @@ export class TokenDatabase {
             blockCreated: pool.blockCreated,
             protocolIndex: pool.protocolIndex,
         };
+    }
+
+    private async _setErc20(
+        address: string,
+        name: string,
+        symbol: string,
+        decimals: number,
+        chainId: number
+    ) {
+        const hash = ethers.utils.solidityKeccak256(
+            ["address", "uint256"],
+            [address, chainId]
+        );
+        const id = hash.slice(2, 26);
+        const erc20 = new this._erc20({
+            _id: id,
+            address: address,
+            name: name,
+            symbol: symbol,
+            decimals: decimals,
+            chainId: chainId,
+        });
+        await erc20.save();
     }
 }
