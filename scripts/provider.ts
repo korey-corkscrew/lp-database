@@ -24,6 +24,7 @@ export class Provider {
     public async initialize() {
         if (this._initalized) return;
         this._chainId = (await this._provider.getNetwork()).chainId;
+        this._block = await this._provider.getBlockNumber();
         this._initalized = true;
     }
 

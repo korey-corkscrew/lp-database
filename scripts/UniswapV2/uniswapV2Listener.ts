@@ -1,11 +1,11 @@
 import { ethers } from "hardhat";
 import chalk from "chalk";
 import { BigNumber } from "ethers";
-import { TokenDatabase } from "../tokenDatabase";
 import { UniswapV2Constants } from "./uniswapV2Constants";
 import { Contract, Provider as MulicallProvider } from "ethers-multicall";
 import { ProtocolIndexConstants } from "../protocolIndexConstants";
 import { Provider } from "../provider";
+import { PoolDatabase } from "../Database/poolDatabase";
 
 interface Reserves {
     pool: string;
@@ -16,7 +16,6 @@ interface Reserves {
 export class UniswapV2EventListener {
     public static async getReservesAndStore(
         provider: Provider,
-        db: TokenDatabase,
         pools: string[],
         poolsPerCall: number
     ) {
@@ -38,7 +37,7 @@ export class UniswapV2EventListener {
                 )} / ${chalk.gray(`[ ${pools.length} ]`)}`
             );
             for (const reserve of reserves) {
-                await db.updatePoolReserves(
+                await PoolDatabase.updatePoolReserves(
                     reserve.pool,
                     chainId,
                     reserve.reserve0,
@@ -90,10 +89,7 @@ export class UniswapV2EventListener {
         return reserves;
     }
 
-    public static async createPairAndStore(
-        provider: Provider,
-        db: TokenDatabase
-    ) {
+    public static async createPairAndStore(provider: Provider) {
         const chainId = provider.chainId();
 
         console.log(
@@ -122,7 +118,7 @@ export class UniswapV2EventListener {
                         );
 
                     if (UniswapV2Constants.validFactory(log.address, chainId)) {
-                        await db.setPool(
+                        await PoolDatabase.setPool(
                             decodedLog.pair,
                             decodedLog.token0,
                             decodedLog.token1,
@@ -140,7 +136,6 @@ export class UniswapV2EventListener {
 
     public static async createPairArchiveAndStore(
         provider: Provider,
-        db: TokenDatabase,
         startBlock: number,
         endBlock: number,
         step: number
@@ -166,7 +161,7 @@ export class UniswapV2EventListener {
 
             for (const log of logs) {
                 if (UniswapV2Constants.validFactory(log.factory, log.chainId)) {
-                    await db.setPool(
+                    await PoolDatabase.setPool(
                         log.pair,
                         log.token0,
                         log.token1,
@@ -181,7 +176,7 @@ export class UniswapV2EventListener {
         }
     }
 
-    public static async syncAndStore(provider: Provider, db: TokenDatabase) {
+    public static async syncAndStore(provider: Provider) {
         const chainId = provider.chainId();
 
         console.log(
@@ -209,7 +204,7 @@ export class UniswapV2EventListener {
                             log.topics
                         );
 
-                    await db.updatePoolReserves(
+                    await PoolDatabase.updatePoolReserves(
                         log.address,
                         chainId,
                         decodedLog.reserve0,
@@ -223,7 +218,6 @@ export class UniswapV2EventListener {
 
     public static async syncArchiveAndStore(
         provider: Provider,
-        db: TokenDatabase,
         startBlock: number,
         endBlock: number,
         step: number
@@ -248,7 +242,7 @@ export class UniswapV2EventListener {
             );
 
             for (const log of logs) {
-                await db.updatePoolReserves(
+                await PoolDatabase.updatePoolReserves(
                     log.pool,
                     chainId,
                     log.reserve0,

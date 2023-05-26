@@ -1,7 +1,8 @@
 import { BigNumber } from "ethers";
 import { ethers } from "hardhat";
-import { connect, model, Schema } from "mongoose";
+import { model, Schema } from "mongoose";
 import invariant from "tiny-invariant";
+import { PoolLookupDatabase } from "./poolLookupDatabase";
 
 export interface IPoolData {
     pool: string;
@@ -17,23 +18,8 @@ export interface IPoolData {
     protocolIndex: number;
 }
 
-export interface IPoolLookup {
-    token0: string;
-    token1: string;
-    chainId: number;
-    poolIds: string[];
-}
-
-export interface IERC20 {
-    address: string;
-    name: string;
-    symbol: string;
-    decimals: string;
-    chainId: number;
-}
-
-export class TokenDatabase {
-    private readonly _poolSchema = new Schema<IPoolData>({
+export class PoolDatabase {
+    private static readonly _poolSchema = new Schema<IPoolData>({
         pool: { type: String, required: true },
         token0: { type: String, required: true },
         token1: { type: String, required: true },
@@ -46,42 +32,19 @@ export class TokenDatabase {
         blockCreated: { type: Number, required: true },
         protocolIndex: { type: Number, required: true },
     });
-    private readonly _poolLookupSchema = new Schema<IPoolLookup>({
-        token0: { type: String, required: true },
-        token1: { type: String, required: true },
-        chainId: { type: Number, required: true },
-        poolIds: { type: [String], required: true },
-    });
-    private readonly _poolData = model<IPoolData>("PoolData", this._poolSchema);
-    private readonly _poolLookup = model<IPoolLookup>(
-        "PoolLookup",
-        this._poolLookupSchema
+    private static readonly _poolData = model<IPoolData>(
+        "PoolData",
+        this._poolSchema
     );
-    private _connected: boolean = false;
-    public readonly databaseUrl: string;
 
-    constructor(_databaseUrl: string | undefined) {
-        invariant(_databaseUrl, "Database URL is undefined");
-        this.databaseUrl = _databaseUrl;
-    }
-
-    public connected(): boolean {
-        return this._connected;
-    }
-
-    public async connect(): Promise<void> {
-        await connect(this.databaseUrl);
-        this._connected = true;
-    }
-
-    public async getAllPoolAddresses(_chainId: number) {
+    public static async getAllPoolAddresses(_chainId: number) {
         const pools = await this._poolData.find({ chainId: _chainId });
         return pools.map((pool) => {
             return pool.pool;
         });
     }
 
-    public async getLastCreatedPoolBlock(_chainId: number) {
+    public static async getLastCreatedPoolBlock(_chainId: number) {
         const pools = await this._poolData
             .find({ chainId: _chainId })
             .sort({ blockCreated: -1 });
@@ -90,7 +53,7 @@ export class TokenDatabase {
         return pool.blockCreated;
     }
 
-    public async getLastUpdatedPoolBlock(_chainId: number) {
+    public static async getLastUpdatedPoolBlock(_chainId: number) {
         const pools = await this._poolData
             .find({ chainId: _chainId })
             .sort({ blockUpdated: -1 });
@@ -99,7 +62,7 @@ export class TokenDatabase {
         return pool.blockUpdated;
     }
 
-    public async getFirstUpdatedPoolBlock(_chainId: number) {
+    public static async getFirstUpdatedPoolBlock(_chainId: number) {
         const pools = await this._poolData
             .find({ chainId: _chainId })
             .sort({ blockUpdated: 1 });
@@ -108,7 +71,7 @@ export class TokenDatabase {
         return pool.blockUpdated;
     }
 
-    public async setPool(
+    public static async setPool(
         _pool: string,
         _token0: string,
         _token1: string,
@@ -118,7 +81,6 @@ export class TokenDatabase {
         _blockCreated: number,
         _protocolIndex: number
     ): Promise<void> {
-        this._isConnected();
         await this._setPool(
             _pool,
             _token0,
@@ -131,28 +93,10 @@ export class TokenDatabase {
         );
     }
 
-    public async getPoolIdsByTokens(
-        _token0: string,
-        _token1: string,
-        _chainId: number
-    ): Promise<string[]> {
-        const hash = ethers.utils.solidityKeccak256(
-            ["address", "address", "uint256"],
-            [_token0, _token1, _chainId]
-        );
-        const id = hash.slice(2, 26);
-        const pools = await this._poolLookup.findById(id);
-        if (pools) {
-            return pools.poolIds;
-        }
-        return [];
-    }
-
-    public async getPoolByAddress(
+    public static async getPoolByAddress(
         _pool: string,
         _chainId: number
     ): Promise<IPoolData> {
-        this._isConnected();
         const hash = ethers.utils.solidityKeccak256(
             ["address", "uint256"],
             [_pool, _chainId]
@@ -161,13 +105,11 @@ export class TokenDatabase {
         return await this._getPoolById(id);
     }
 
-    public async getPoolById(_id: string): Promise<IPoolData> {
-        this._isConnected();
+    public static async getPoolById(_id: string): Promise<IPoolData> {
         return await this._getPoolById(_id);
     }
 
-    public async getPoolsById(_ids: string[]): Promise<IPoolData[]> {
-        this._isConnected();
+    public static async getPoolsById(_ids: string[]): Promise<IPoolData[]> {
         let pools = [];
         for (let id of _ids) {
             pools.push(await this._getPoolById(id));
@@ -175,14 +117,13 @@ export class TokenDatabase {
         return pools;
     }
 
-    public async updatePoolReserves(
+    public static async updatePoolReserves(
         _pool: string,
         _chainId: number,
         _reserve0: BigNumber,
         _reserve1: BigNumber,
         _blockUpdated: number
     ) {
-        this._isConnected();
         const hash = ethers.utils.solidityKeccak256(
             ["address", "uint256"],
             [_pool, _chainId]
@@ -196,67 +137,7 @@ export class TokenDatabase {
         });
     }
 
-    private _isConnected() {
-        invariant(this._connected, "Not connected to the database");
-    }
-
-    private async _setPoolLookup(
-        _token0: string,
-        _token1: string,
-        _pool: string,
-        _chainId: number
-    ) {
-        const hash0 = ethers.utils.solidityKeccak256(
-            ["address", "address", "uint256"],
-            [_token0, _token1, _chainId]
-        );
-        const hash1 = ethers.utils.solidityKeccak256(
-            ["address", "address", "uint256"],
-            [_token1, _token0, _chainId]
-        );
-        const id0 = hash0.slice(2, 26);
-        const id1 = hash1.slice(2, 26);
-
-        const poolIdHash = ethers.utils.solidityKeccak256(
-            ["address", "uint256"],
-            [_pool, _chainId]
-        );
-        const poolId = poolIdHash.slice(2, 26);
-
-        let lookup0 = await this._poolLookup.findById(id0);
-        if (lookup0) {
-            await this._poolLookup.findByIdAndUpdate(id0, {
-                poolIds: [...lookup0.poolIds, poolId],
-            });
-        } else {
-            lookup0 = new this._poolLookup({
-                _id: id0,
-                token0: _token0,
-                token1: _token1,
-                chainId: _chainId,
-                poolIds: [poolId],
-            });
-            await lookup0.save();
-        }
-
-        let lookup1 = await this._poolLookup.findById(id1);
-        if (lookup1) {
-            await this._poolLookup.findByIdAndUpdate(id1, {
-                poolIds: [...lookup1.poolIds, poolId],
-            });
-        } else {
-            lookup1 = new this._poolLookup({
-                _id: id1,
-                token0: _token1,
-                token1: _token0,
-                chainId: _chainId,
-                poolIds: [poolId],
-            });
-            await lookup1.save();
-        }
-    }
-
-    private async _setPool(
+    private static async _setPool(
         _pool: string,
         _token0: string,
         _token1: string,
@@ -293,10 +174,15 @@ export class TokenDatabase {
         // Save the pool to the db
         await pool.save();
 
-        await this._setPoolLookup(_token0, _token1, _pool, _chainId);
+        await PoolLookupDatabase.setPoolLookup(
+            _token0,
+            _token1,
+            _pool,
+            _chainId
+        );
     }
 
-    private async _getPoolById(_id: string): Promise<IPoolData> {
+    private static async _getPoolById(_id: string): Promise<IPoolData> {
         const pool = await this._poolData.findById(_id);
         invariant(pool, `Pool ID: [ ${_id} ] not found in the database`);
         return {

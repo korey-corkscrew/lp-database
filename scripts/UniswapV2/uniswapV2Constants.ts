@@ -221,6 +221,16 @@ export class UniswapV2Constants {
             chainId: 1,
             startBlock: 10000835,
         },
+        {
+            factory: "0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac",
+            router: "",
+            fee: 997,
+            feeBase: 1000,
+            initCodeHash: "",
+            protocol: "SUSHISWAP",
+            chainId: 1,
+            startBlock: 10794229,
+        },
     ];
 
     private static readonly _factoryById = new Map<string, UniswapV2Factory>(

@@ -1,15 +1,12 @@
 import { ethers } from "hardhat";
 import chalk from "chalk";
-import { TokenDatabase } from "../../tokenDatabase";
 import { FirebirdConstants } from "./firebirdConstants";
 import { ProtocolIndexConstants } from "../../protocolIndexConstants";
 import { Provider } from "../../provider";
+import { PoolDatabase } from "../../Database/poolDatabase";
 
 export class FirebirdEventListener {
-    public static async createPairAndStore(
-        provider: Provider,
-        db: TokenDatabase
-    ) {
+    public static async createPairAndStore(provider: Provider) {
         const chainId = provider.chainId();
 
         console.log(
@@ -58,7 +55,7 @@ export class FirebirdEventListener {
                         ]
                     );
 
-                    await db.setPool(
+                    await PoolDatabase.setPool(
                         decodedLog.pair,
                         decodedLog.token0,
                         decodedLog.token1,
@@ -75,7 +72,6 @@ export class FirebirdEventListener {
 
     public static async createPairArchiveAndStore(
         provider: Provider,
-        db: TokenDatabase,
         startBlock: number,
         endBlock: number,
         step: number
@@ -105,7 +101,7 @@ export class FirebirdEventListener {
                     [log.swapFee, log.tokenWeight0, 100 - log.tokenWeight0]
                 );
 
-                await db.setPool(
+                await PoolDatabase.setPool(
                     log.pair,
                     log.token0,
                     log.token1,

@@ -1,15 +1,12 @@
 import { ethers } from "hardhat";
 import chalk from "chalk";
-import { TokenDatabase } from "../../tokenDatabase";
 import { DystopiaConstants } from "./dystopiaConstants";
 import { ProtocolIndexConstants } from "../../protocolIndexConstants";
 import { Provider } from "../../provider";
+import { PoolDatabase } from "../../Database/poolDatabase";
 
 export class DystopiaEventListener {
-    public static async createPairAndStore(
-        provider: Provider,
-        db: TokenDatabase
-    ) {
+    public static async createPairAndStore(provider: Provider) {
         const chainId = provider.chainId();
 
         console.log(
@@ -54,7 +51,7 @@ export class DystopiaEventListener {
                         [decodedLog.stable]
                     );
 
-                    await db.setPool(
+                    await PoolDatabase.setPool(
                         decodedLog.pair,
                         decodedLog.token0,
                         decodedLog.token1,
@@ -71,7 +68,6 @@ export class DystopiaEventListener {
 
     public static async createPairArchiveAndStore(
         provider: Provider,
-        db: TokenDatabase,
         startBlock: number,
         endBlock: number,
         step: number
@@ -102,7 +98,7 @@ export class DystopiaEventListener {
                     ["bool"],
                     [log.stable]
                 );
-                await db.setPool(
+                await PoolDatabase.setPool(
                     log.pair,
                     log.token0,
                     log.token1,
