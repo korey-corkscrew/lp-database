@@ -13,11 +13,6 @@ export class Provider {
         this._provider = new WebSocketProvider(_rpcWebSocket);
         this._provider.on("block", async (block) => {
             this._block = block;
-            // console.log(
-            //     `Chain ID ${chalk.cyan(
-            //         `[ ${this._chainId} ]`
-            //     )} | Block ${chalk.yellow(`[ ${this._block} ]`)}`
-            // );
         });
     }
 

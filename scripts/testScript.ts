@@ -2,7 +2,6 @@ import invariant from "tiny-invariant";
 import { TokenConstants } from "./tokenConstants";
 import { env } from "process";
 import { Provider } from "./provider";
-import { BentoBoxListener } from "./UniswapV2/BentoBox/bentoBoxListener";
 import { Database } from "./Database/database";
 
 async function main() {
@@ -15,20 +14,6 @@ async function main() {
 
     const polygon = new Provider(env.POLYGON_RPC_WS);
     await polygon.initialize();
-
-    // const logs = await BentoBoxListener._deployPoolArchive(
-    //     polygon,
-    //     25840876,
-    //     30000000
-    // );
-    // console.log(logs);
-
-    await BentoBoxListener.deployPoolArchiveAndStore(
-        polygon,
-        25840876,
-        polygon.block(),
-        10000000
-    );
 
     // const chainId = 137;
 

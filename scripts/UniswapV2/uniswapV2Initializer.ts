@@ -4,7 +4,6 @@ import { DystopiaEventListener } from "./Dystopia/dystopiaListener";
 import { FirebirdEventListener } from "./Firebird/firebirdListener";
 import { Provider } from "../provider";
 import { PoolDatabase } from "../Database/poolDatabase";
-import { BentoBoxListener } from "./BentoBox/bentoBoxListener";
 
 export class UniswapV2Initializer {
     public static async initialize(provider: Provider) {
@@ -45,13 +44,6 @@ export class UniswapV2Initializer {
 
             // Firebird
             await FirebirdEventListener.createPairArchiveAndStore(
-                provider,
-                0,
-                endBlock,
-                UniswapV2Constants.createPairEventArchiveBlocksPerCall(chainId)
-            );
-
-            await BentoBoxListener.deployPoolArchiveAndStore(
                 provider,
                 0,
                 endBlock,
@@ -108,13 +100,6 @@ export class UniswapV2Initializer {
             UniswapV2Constants.createPairEventArchiveBlocksPerCall(chainId)
         );
 
-        await BentoBoxListener.deployPoolArchiveAndStore(
-            provider,
-            lastCreatedBlock + 1,
-            provider.block(),
-            UniswapV2Constants.createPairEventArchiveBlocksPerCall(chainId)
-        );
-
         // Listen for new pools
         await UniswapV2EventListener.createPairAndStore(provider);
 
@@ -125,7 +110,6 @@ export class UniswapV2Initializer {
         // ---------------------------------------------------------- //
         await DystopiaEventListener.createPairAndStore(provider);
         await FirebirdEventListener.createPairAndStore(provider);
-        await BentoBoxListener.deployPoolAndStore(provider);
 
         // Get Sync logs that were emitted while the reserves were updating
         await UniswapV2EventListener.syncArchiveAndStore(
