@@ -1,14 +1,14 @@
 import { env } from "process";
-import { TokenDatabase } from "./tokenDatabase";
 import { UniswapV2Initializer } from "./UniswapV2/uniswapV2Initializer";
 import { Provider } from "./provider";
+import { Database } from "./Database/database";
 
 async function main() {
     const dotenv = require("dotenv");
     dotenv.config();
 
     /* ----------- Create database instance ----------- */
-    const db = new TokenDatabase(env.MONGODB_URL);
+    const db = new Database(env.MONGODB_URL);
     await db.connect();
 
     /* ----------- Create websocket providers ----------- */
@@ -23,9 +23,9 @@ async function main() {
     await ethereum.initialize();
 
     /* ----------- Initialize databases ----------- */
-    await UniswapV2Initializer.initialize(polygon, db);
-    await UniswapV2Initializer.initialize(arbitrum, db);
-    await UniswapV2Initializer.initialize(ethereum, db);
+    await UniswapV2Initializer.initialize(polygon);
+    // await UniswapV2Initializer.initialize(arbitrum);
+    // await UniswapV2Initializer.initialize(ethereum);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

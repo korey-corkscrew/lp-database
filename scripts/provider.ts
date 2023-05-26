@@ -13,17 +13,13 @@ export class Provider {
         this._provider = new WebSocketProvider(_rpcWebSocket);
         this._provider.on("block", async (block) => {
             this._block = block;
-            // console.log(
-            //     `Chain ID ${chalk.cyan(
-            //         `[ ${this._chainId} ]`
-            //     )} | Block ${chalk.yellow(`[ ${this._block} ]`)}`
-            // );
         });
     }
 
     public async initialize() {
         if (this._initalized) return;
         this._chainId = (await this._provider.getNetwork()).chainId;
+        this._block = await this._provider.getBlockNumber();
         this._initalized = true;
     }
 
