@@ -3,6 +3,7 @@ import { TokenConstants } from "./tokenConstants";
 import { env } from "process";
 import { Provider } from "./provider";
 import { Database } from "./Database/database";
+import { MeshSwapInitializer } from "./UniswapV2/mesh-swap/mesh-swap-initializer";
 
 async function main() {
     const dotenv = require("dotenv");
@@ -14,6 +15,12 @@ async function main() {
 
     const polygon = new Provider(env.POLYGON_RPC_WS);
     await polygon.initialize();
+
+    // polygon.provider().on({}, (event) => {
+    //     console.log(event);
+    // });
+
+    await MeshSwapInitializer.initialize(polygon);
 
     // const chainId = 137;
 
