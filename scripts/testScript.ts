@@ -4,6 +4,7 @@ import { env } from "process";
 import { Provider } from "./provider";
 import { Database } from "./Database/database";
 import { MeshSwapInitializer } from "./UniswapV2/mesh-swap/mesh-swap-initializer";
+import { UniswapV2Constants } from "./UniswapV2/uniswapV2Constants";
 
 async function main() {
     const dotenv = require("dotenv");
@@ -20,7 +21,8 @@ async function main() {
     //     console.log(event);
     // });
 
-    await MeshSwapInitializer.initialize(polygon);
+    // await MeshSwapInitializer.initialize(polygon);
+    console.log(UniswapV2Constants.factoriesByChain(137));
 
     // const chainId = 137;
 

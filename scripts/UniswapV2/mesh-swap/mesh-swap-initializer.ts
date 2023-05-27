@@ -64,9 +64,9 @@ export class MeshSwapInitializer {
 
             await CreatePool.latestAndStore(provider);
 
-            await Sync.archiveAndStore(provider, endBlock, provider.block());
+            // await Sync.archiveAndStore(provider, endBlock, provider.block());
 
-            await Sync.latestAndStore(provider);
+            // await Sync.latestAndStore(provider);
 
             await ChangeFee.archiveAndStore(
                 provider,
@@ -85,8 +85,8 @@ export class MeshSwapInitializer {
 
             await CreatePool.latestAndStore(provider);
 
-            await Sync.archiveAndStore(provider, latestBlock, provider.block());
-            await Sync.latestAndStore(provider);
+            // await Sync.archiveAndStore(provider, latestBlock, provider.block());
+            // await Sync.latestAndStore(provider);
 
             await ChangeFee.archiveAndStore(
                 provider,
