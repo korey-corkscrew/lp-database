@@ -245,6 +245,12 @@ export class UniswapV2Constants {
         })
     );
 
+    public static factoriesByChain(chainId: number) {
+        return this._factories.filter((factory) => {
+            return factory.chainId == chainId;
+        });
+    }
+
     public static validFactory(_factory: string, _chainId: number): boolean {
         const id = ethers.utils.solidityKeccak256(
             ["address", "uint256"],

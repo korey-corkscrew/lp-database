@@ -6,6 +6,7 @@ import { Contract, Provider as MulicallProvider } from "ethers-multicall";
 import { ProtocolIndexConstants } from "../protocolIndexConstants";
 import { Provider } from "../provider";
 import { PoolDatabase } from "../Database/poolDatabase";
+import { Log } from "@ethersproject/providers";
 
 interface Reserves {
     pool: string;
@@ -89,7 +90,10 @@ export class UniswapV2EventListener {
         return reserves;
     }
 
-    public static async createPairAndStore(provider: Provider) {
+    public static async createPairAndStore(
+        provider: Provider,
+        address?: string
+    ) {
         const chainId = provider.chainId();
 
         console.log(
@@ -138,7 +142,8 @@ export class UniswapV2EventListener {
         provider: Provider,
         startBlock: number,
         endBlock: number,
-        step: number
+        step: number,
+        address?: string
     ) {
         const chainId = provider.chainId();
         for (let i = startBlock; i <= endBlock; i += step) {
@@ -146,7 +151,8 @@ export class UniswapV2EventListener {
                 provider,
                 chainId,
                 i,
-                i + step - 1
+                i + step - 1,
+                address
             );
 
             console.log(
@@ -257,19 +263,33 @@ export class UniswapV2EventListener {
         provider: Provider,
         chainId: number,
         startBlock: number,
-        endBlock?: number
+        endBlock: number,
+        address?: string
     ) {
-        const logs = await provider.provider().getLogs({
-            fromBlock: startBlock,
-            toBlock: endBlock,
-            topics: [
-                ethers.utils.id(
-                    UniswapV2Constants.IUniswapV2Factory.getEvent(
-                        "PairCreated"
-                    ).format()
-                ),
-            ],
-        });
+        let success = false;
+        let logs: Log[] = [];
+        do {
+            try {
+                logs = await provider.provider().getLogs({
+                    fromBlock: startBlock,
+                    toBlock: endBlock,
+                    address: address,
+                    topics: [
+                        ethers.utils.id(
+                            UniswapV2Constants.IUniswapV2Factory.getEvent(
+                                "PairCreated"
+                            ).format()
+                        ),
+                    ],
+                });
+                success = true;
+            } catch {
+                console.log(
+                    `UniswapV2 archive get "PairCreated" logs failed. Trying again in 1 second.`
+                );
+                setTimeout(() => {}, 1000);
+            }
+        } while (!success);
         const decodedLogs = logs.map((log) => {
             const decodedLog =
                 UniswapV2Constants.IUniswapV2Factory.decodeEventLog(

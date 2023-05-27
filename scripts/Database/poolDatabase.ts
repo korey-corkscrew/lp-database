@@ -32,20 +32,20 @@ export class PoolDatabase {
         blockCreated: { type: Number, required: true },
         protocolIndex: { type: Number, required: true },
     });
-    private static readonly _poolData = model<IPoolData>(
+    public static readonly poolData = model<IPoolData>(
         "PoolData",
         this._poolSchema
     );
 
     public static async getAllPoolAddresses(_chainId: number) {
-        const pools = await this._poolData.find({ chainId: _chainId });
+        const pools = await this.poolData.find({ chainId: _chainId });
         return pools.map((pool) => {
             return pool.pool;
         });
     }
 
     public static async getLastCreatedPoolBlock(_chainId: number) {
-        const pools = await this._poolData
+        const pools = await this.poolData
             .find({ chainId: _chainId })
             .sort({ blockCreated: -1 });
         if (pools.length == 0) return 0;
@@ -54,7 +54,7 @@ export class PoolDatabase {
     }
 
     public static async getLastUpdatedPoolBlock(_chainId: number) {
-        const pools = await this._poolData
+        const pools = await this.poolData
             .find({ chainId: _chainId })
             .sort({ blockUpdated: -1 });
         if (pools.length == 0) return 0;
@@ -63,7 +63,7 @@ export class PoolDatabase {
     }
 
     public static async getFirstUpdatedPoolBlock(_chainId: number) {
-        const pools = await this._poolData
+        const pools = await this.poolData
             .find({ chainId: _chainId })
             .sort({ blockUpdated: 1 });
         if (pools.length == 0) return 0;
@@ -96,7 +96,7 @@ export class PoolDatabase {
     public static async getPoolByAddress(
         _pool: string,
         _chainId: number
-    ): Promise<IPoolData> {
+    ): Promise<IPoolData | null> {
         const hash = ethers.utils.solidityKeccak256(
             ["address", "uint256"],
             [_pool, _chainId]
@@ -105,11 +105,13 @@ export class PoolDatabase {
         return await this._getPoolById(id);
     }
 
-    public static async getPoolById(_id: string): Promise<IPoolData> {
+    public static async getPoolById(_id: string): Promise<IPoolData | null> {
         return await this._getPoolById(_id);
     }
 
-    public static async getPoolsById(_ids: string[]): Promise<IPoolData[]> {
+    public static async getPoolsById(
+        _ids: string[]
+    ): Promise<(IPoolData | null)[]> {
         let pools = [];
         for (let id of _ids) {
             pools.push(await this._getPoolById(id));
@@ -130,10 +132,26 @@ export class PoolDatabase {
         );
         const id = hash.slice(2, 26);
 
-        await this._poolData.findByIdAndUpdate(id, {
+        await this.poolData.findByIdAndUpdate(id, {
             reserve0: _reserve0.toString(),
             reserve1: _reserve1.toString(),
             blockUpdated: _blockUpdated,
+        });
+    }
+
+    public static async updatePoolData(
+        _pool: string,
+        _chainId: number,
+        _data: string
+    ) {
+        const hash = ethers.utils.solidityKeccak256(
+            ["address", "uint256"],
+            [_pool, _chainId]
+        );
+        const id = hash.slice(2, 26);
+
+        await this.poolData.findByIdAndUpdate(id, {
+            data: _data,
         });
     }
 
@@ -155,24 +173,25 @@ export class PoolDatabase {
         // MongoDB object ID needs to be 12 bytes
         const id = idHash.slice(2, 26);
 
-        // Create pool object
-        const pool = new this._poolData({
-            _id: id,
-            pool: _pool,
-            token0: _token0,
-            token1: _token1,
-            factory: _factory,
-            reserve0: BigNumber.from(0),
-            reserve1: BigNumber.from(0),
-            chainId: _chainId,
-            data: _data,
-            blockUpdated: 0,
-            blockCreated: _blockCreated,
-            protocolIndex: _protocolIndex,
-        });
-
-        // Save the pool to the db
-        await pool.save();
+        await this.poolData.findByIdAndUpdate(
+            id,
+            {
+                $setOnInsert: {
+                    pool: _pool,
+                    token0: _token0,
+                    token1: _token1,
+                    factory: _factory,
+                    chainId: _chainId,
+                    data: _data,
+                    blockCreated: _blockCreated,
+                    protocolIndex: _protocolIndex,
+                    reserve0: BigNumber.from(0),
+                    reserve1: BigNumber.from(0),
+                    blockUpdated: 0,
+                },
+            },
+            { upsert: true }
+        );
 
         await PoolLookupDatabase.setPoolLookup(
             _token0,
@@ -182,9 +201,10 @@ export class PoolDatabase {
         );
     }
 
-    private static async _getPoolById(_id: string): Promise<IPoolData> {
-        const pool = await this._poolData.findById(_id);
-        invariant(pool, `Pool ID: [ ${_id} ] not found in the database`);
+    private static async _getPoolById(_id: string): Promise<IPoolData | null> {
+        const pool = await this.poolData.findById(_id);
+        // invariant(pool, `Pool ID: [ ${_id} ] not found in the database`);
+        if (pool == null) return null;
         return {
             pool: pool.pool,
             token0: pool.token0,

@@ -41,4 +41,8 @@ export class Provider {
     private _isInitialized() {
         invariant(this._initalized, "Listener not initialized");
     }
+
+    public initialized(): boolean {
+        return this._initalized;
+    }
 }

@@ -17,18 +17,12 @@ export class FirebirdEventListener {
             )} logs`
         );
 
-        let address: string = "";
-        for (const factory of FirebirdConstants.factories) {
-            if (factory.chainId == chainId) {
-                address = factory.factory;
-                return;
-            }
-        }
-        if (address == "") return;
+        const factory = FirebirdConstants.factories.get(chainId);
+        if (factory == undefined) return [];
 
         provider.provider().on(
             {
-                address: address,
+                address: factory.factory,
                 topics: [
                     ethers.utils.id(
                         FirebirdConstants.IFirebirdFactory.getEvent(
@@ -121,20 +115,13 @@ export class FirebirdEventListener {
         startBlock: number,
         endBlock?: number
     ) {
-        let address: string = "";
-        for (const factory of FirebirdConstants.factories) {
-            if (factory.chainId == chainId) {
-                address = factory.factory;
-                break;
-            }
-        }
-
-        if (address == "") return [];
+        const factory = FirebirdConstants.factories.get(chainId);
+        if (factory == undefined) return [];
 
         const logs = await provider.provider().getLogs({
             fromBlock: startBlock,
             toBlock: endBlock,
-            address: address,
+            address: factory.factory,
             topics: [
                 ethers.utils.id(
                     FirebirdConstants.IFirebirdFactory.getEvent(

@@ -1,18 +1,26 @@
 import { ethers } from "hardhat";
 
-export class FirebirdConstants {
-    public static readonly firebirdFactoryAbi =
-        require("../../../artifacts/contracts/interfaces/IFirebirdFactory.sol/IFirebirdFactory.json")
+export class MeshSwapConstants {
+    public static readonly factoryAbi =
+        require("../../../artifacts/contracts/interfaces/IMeshswapFactory.sol/IMeshswapFactory.json")
             .abi;
-    public static readonly IFirebirdFactory = new ethers.utils.Interface(
-        this.firebirdFactoryAbi
+    public static readonly IMeshswapFactory = new ethers.utils.Interface(
+        this.factoryAbi
     );
+
+    public static readonly poolAbi =
+        require("../../../artifacts/contracts/interfaces/IMeshswapPool.sol/IMeshswapPool.json")
+            .abi;
+    public static readonly IMeshswapPool = new ethers.utils.Interface(
+        this.poolAbi
+    );
+
     public static readonly factories = new Map([
         [
             137,
             {
-                factory: "0x5De74546d3B86C8Df7FEEc30253865e1149818C8",
-                startBlock: 15139510,
+                factory: "0x9F3044f7F9FC8bC9eD615d54845b4577B833282d",
+                startBlock: 27827673,
             },
         ],
     ]);
