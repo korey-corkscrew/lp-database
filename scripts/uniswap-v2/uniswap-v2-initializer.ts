@@ -17,6 +17,6 @@ export class UniswapV2Initializer {
         await Sync.archiveAndStore(provider, startBlock, provider.block());
         await Sync.latestAndStore(provider);
 
-        provider.addCallback(DystopiaInitializer.handleBlock);
+        await provider.sync();
     }
 }

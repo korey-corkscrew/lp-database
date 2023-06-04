@@ -1,27 +1,29 @@
 import { WebSocketProvider } from "@ethersproject/providers";
 import chalk from "chalk";
 import invariant from "tiny-invariant";
+import { ChainDatabase } from "../database/chain";
 
 export class Provider {
     private readonly _provider: WebSocketProvider;
     private _chainId: number = 0;
     private _block: number = 0;
     private _initalized: boolean = false;
-    private _callbacks: CallableFunction[] = new Array();
+    private _sync: boolean = false;
 
     constructor(_rpcWebSocket: string | undefined) {
         invariant(_rpcWebSocket, "RPC web socket is undefined");
         this._provider = new WebSocketProvider(_rpcWebSocket);
-        this._provider.on("block", async (block) => {
+        this._provider.on("block", async (block: number) => {
             this._block = block;
-            for (const callback of this._callbacks) {
-                await callback(block, this._chainId);
+            if (this._sync) {
+                await ChainDatabase.updateChain(this._chainId, block);
             }
         });
     }
 
-    public addCallback(callback: CallableFunction) {
-        this._callbacks.push(callback);
+    public async sync() {
+        if (this._sync) return;
+        this._sync = true;
     }
 
     public async initialize() {

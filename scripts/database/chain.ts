@@ -26,4 +26,12 @@ export class ChainDatabase {
             { upsert: true }
         );
     }
+
+    // public static async updateChains(_chainIds: number[], _block: number) {
+    //     await this._chain.updateMany(
+    //         { _id: { $in: _chainIds } },
+    //         { $set: { block: _block } },
+    //         { multi: true }
+    //     );
+    // }
 }
