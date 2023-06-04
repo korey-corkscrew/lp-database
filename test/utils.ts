@@ -1,6 +1,6 @@
 import { env } from "process";
-import { Provider } from "../scripts/provider";
-import { Database } from "../scripts/Database/database";
+import { Provider } from "../scripts/utils/provider";
+import { Database } from "../scripts/database/database";
 
 export function getRpcUrls() {
     const dotenv = require("dotenv");
