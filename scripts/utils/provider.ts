@@ -1,0 +1,58 @@
+import { WebSocketProvider } from "@ethersproject/providers";
+import chalk from "chalk";
+import invariant from "tiny-invariant";
+import { ChainDatabase } from "../database/chain";
+
+export class Provider {
+    private readonly _provider: WebSocketProvider;
+    private _chainId: number = 0;
+    private _block: number = 0;
+    private _initalized: boolean = false;
+    private _sync: boolean = false;
+
+    constructor(_rpcWebSocket: string | undefined) {
+        invariant(_rpcWebSocket, "RPC web socket is undefined");
+        this._provider = new WebSocketProvider(_rpcWebSocket);
+        this._provider.on("block", async (block: number) => {
+            this._block = block;
+            if (this._sync) {
+                await ChainDatabase.updateChain(this._chainId, block);
+            }
+        });
+    }
+
+    public async sync() {
+        if (this._sync) return;
+        this._sync = true;
+    }
+
+    public async initialize() {
+        if (this._initalized) return;
+        this._chainId = (await this._provider.getNetwork()).chainId;
+        this._block = await this._provider.getBlockNumber();
+        this._initalized = true;
+    }
+
+    public block(): number {
+        this._isInitialized();
+        return this._block;
+    }
+
+    public chainId(): number {
+        this._isInitialized();
+        return this._chainId;
+    }
+
+    public provider(): WebSocketProvider {
+        this._isInitialized();
+        return this._provider;
+    }
+
+    private _isInitialized() {
+        invariant(this._initalized, "Listener not initialized");
+    }
+
+    public initialized(): boolean {
+        return this._initalized;
+    }
+}

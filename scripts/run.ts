@@ -1,9 +1,7 @@
 import { env } from "process";
-import { UniswapV2Initializer } from "./UniswapV2/uniswapV2Initializer";
-import { Provider } from "./provider";
-import { Database } from "./Database/database";
-import { MeshSwapInitializer } from "./UniswapV2/mesh-swap/mesh-swap-initializer";
-import { UniswapV2InitializerV2 } from "./UniswapV2/uniswapV2InitializerV2";
+import { Provider } from "./utils/provider";
+import { Database } from "./database/database";
+import { UniswapV2Initializer } from "./uniswap-v2/uniswap-v2-initializer";
 
 async function main() {
     const dotenv = require("dotenv");
@@ -25,8 +23,7 @@ async function main() {
     await ethereum.initialize();
 
     /* ----------- Initialize databases ----------- */
-    // await MeshSwapInitializer.initialize(polygon);
-    await UniswapV2InitializerV2.initialize(polygon);
+    await UniswapV2Initializer.initialize(polygon);
     // await UniswapV2Initializer.initialize(arbitrum);
     // await UniswapV2Initializer.initialize(ethereum);
 }

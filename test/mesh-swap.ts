@@ -2,13 +2,13 @@ import { time, loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { MeshSwapInitializer } from "../scripts/UniswapV2/mesh-swap/mesh-swap-initializer";
-import { Provider } from "../scripts/provider";
-import { Database } from "../scripts/Database/database";
+import { MeshSwapInitializer } from "../scripts/uniswap-v2/mesh-swap/mesh-swap-initializer";
+import { Provider } from "../scripts/utils/provider";
+import { Database } from "../scripts/database/database";
 import { env } from "process";
 import { getDatabase, getRpcs } from "./utils";
-import { PoolDatabase } from "../scripts/Database/poolDatabase";
-import { MeshSwapPool } from "../scripts/UniswapV2/mesh-swap/db/pool";
+import { PoolDatabase } from "../scripts/database/pool-database";
+import { MeshSwapPool } from "../scripts/uniswap-v2/mesh-swap/db/pool";
 import exp from "constants";
 
 describe("mesh swap", function () {
